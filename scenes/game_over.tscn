@@ -1,0 +1,131 @@
+[gd_scene load_steps=6 format=3 uid="uid://b8mzrnover01"]
+
+[ext_resource type="Script" path="res://scripts/game_over.gd" id="1_over"]
+[ext_resource type="Script" path="res://scripts/pixel_label.gd" id="2_plabel"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/menu_bg.png" id="3_bg"]
+
+[sub_resource type="StyleBoxFlat" id="sb_normal"]
+bg_color = Color(0.227451, 0.172549, 0.4, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.423529, 0.360784, 0.905882, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_hover"]
+bg_color = Color(0.317647, 0.247059, 0.541176, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.560784, 0.486275, 1, 1)
+
+[node name="GameOver" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_over")
+
+[node name="Background" type="TextureRect" parent="."]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Title" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 320.0
+offset_bottom = 400.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "GAME OVER"
+color = Color(0.937255, 0.278431, 0.435294, 1)
+pixel_scale = 9
+align = 1
+
+[node name="Reached" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 430.0
+offset_bottom = 470.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "YOU REACHED TIER 1"
+color = Color(0.890196, 0.890196, 1, 1)
+pixel_scale = 4
+align = 1
+
+[node name="Buttons" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = 100.0
+offset_right = 160.0
+offset_bottom = 320.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 24
+
+[node name="RetryButton" type="Button" parent="Buttons"]
+custom_minimum_size = Vector2(320, 88)
+layout_mode = 2
+theme_override_styles/normal = SubResource("sb_normal")
+theme_override_styles/hover = SubResource("sb_hover")
+
+[node name="Label" type="Control" parent="Buttons/RetryButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "RETRY"
+pixel_scale = 6
+align = 1
+
+[node name="MenuButton" type="Button" parent="Buttons"]
+custom_minimum_size = Vector2(320, 76)
+layout_mode = 2
+theme_override_styles/normal = SubResource("sb_normal")
+theme_override_styles/hover = SubResource("sb_hover")
+
+[node name="Label" type="Control" parent="Buttons/MenuButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "MAIN MENU"
+pixel_scale = 5
+align = 1
+
+[connection signal="pressed" from="Buttons/RetryButton" to="." method="_on_retry_pressed"]
+[connection signal="pressed" from="Buttons/MenuButton" to="." method="_on_menu_pressed"]

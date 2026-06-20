@@ -1,0 +1,43 @@
+[gd_scene load_steps=8 format=3 uid="uid://b8mzrngame01"]
+
+[ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="Script" path="res://scripts/maze_renderer.gd" id="2_render"]
+[ext_resource type="Script" path="res://scripts/player_controller.gd" id="3_player"]
+[ext_resource type="Script" path="res://scripts/virtual_joystick.gd" id="4_stick"]
+[ext_resource type="PackedScene" uid="uid://b8mzrnhud001" path="res://scenes/hud.tscn" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/character_visual.gd" id="6_char"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_player"]
+radius = 8.0
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1_game")
+
+[node name="MazeRenderer" type="Node2D" parent="."]
+script = ExtResource("2_render")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+motion_mode = 1
+script = ExtResource("3_player")
+
+[node name="Visual" type="Node2D" parent="Player"]
+script = ExtResource("6_char")
+
+[node name="Collision" type="CollisionShape2D" parent="Player"]
+shape = SubResource("CircleShape2D_player")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="VirtualJoystick" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_top = 0.35
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_stick")
+
+[node name="HUD" parent="UI" instance=ExtResource("5_hud")]
