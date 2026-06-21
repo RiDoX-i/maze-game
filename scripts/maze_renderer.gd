@@ -27,6 +27,7 @@ var _floor_tex: Texture2D
 var _wall_body: StaticBody2D
 var _wall_layer: Node2D
 var _energy_mat: ShaderMaterial
+var _accent := Color.WHITE   ## Per-chapter tint applied to floor + walls (not markers).
 
 
 func _ready() -> void:
@@ -34,10 +35,12 @@ func _ready() -> void:
 	_ensure_wall_layer()
 
 
-## Render the given maze using the theme for [param tier]. Rebuilds visuals and
-## collision.
-func render(maze: MazeGenerator.MazeData, tier: int = 1) -> void:
+## Render the given maze using the theme for [param tier]. [param accent] is a
+## subtle per-chapter tint applied to the floor + walls (markers stay pure).
+## Rebuilds visuals and collision.
+func render(maze: MazeGenerator.MazeData, tier: int = 1, accent: Color = Color.WHITE) -> void:
 	_maze = maze
+	_accent = accent
 	_ensure_wall_layer()
 
 	var theme := MazeTheme.for_tier(tier)
@@ -45,6 +48,7 @@ func render(maze: MazeGenerator.MazeData, tier: int = 1) -> void:
 	_floor_tex = tex.floor
 	_wall_layer.setup(maze, tex.walls, TILE)
 	_wall_layer.material = _theme_material(theme)
+	_wall_layer.self_modulate = accent
 
 	_build_collision()
 	queue_redraw()
@@ -119,19 +123,28 @@ func _theme_material(theme: Dictionary) -> ShaderMaterial:
 func _draw() -> void:
 	if _maze == null:
 		return
-	# Tiled floor underlay (one draw call, repeats the 32px tile across the maze).
+	# Tiled floor underlay (one draw call, repeats the 32px tile across the maze),
+	# tinted by the per-chapter accent.
 	if _floor_tex != null:
-		draw_texture_rect(_floor_tex, Rect2(Vector2.ZERO, pixel_size()), true)
+		draw_texture_rect(_floor_tex, Rect2(Vector2.ZERO, pixel_size()), true, _accent)
 	# Start / exit markers (drawn here, below the wall layer; both sit on floor).
 	_draw_marker(_maze.start, COLOR_START)
 	_draw_marker(_maze.exit, COLOR_EXIT)
 
 
+## A layered "gateway" marker: faint halo, two rings, a bright core, plus four
+## cardinal pixel studs. Chunky and crisp; the exit's living glow comes from its
+## PointLight2D beacon (added by the game scene).
 func _draw_marker(cell: Vector2i, color: Color) -> void:
 	var center := cell_center_world(cell)
-	draw_circle(center, TILE * 0.42, Color(color, 0.25))
-	draw_circle(center, TILE * 0.28, color)
-	draw_circle(center, TILE * 0.14, Color.WHITE)
+	draw_circle(center, TILE * 0.46, Color(color, 0.16))           # outer halo
+	draw_circle(center, TILE * 0.34, Color(color, 0.30))           # mid halo
+	draw_circle(center, TILE * 0.30, color.darkened(0.25))         # ring body
+	draw_circle(center, TILE * 0.20, color)                        # inner ring
+	draw_circle(center, TILE * 0.10, Color.WHITE)                  # bright core
+	var stud := TILE * 0.07
+	for dir in [Vector2(0, -1), Vector2(0, 1), Vector2(-1, 0), Vector2(1, 0)]:
+		draw_circle(center + dir * TILE * 0.30, stud, color.lightened(0.4))
 
 
 func _build_collision() -> void:

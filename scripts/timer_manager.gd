@@ -3,41 +3,41 @@ extends RefCounted
 
 ## Pure, engine-decoupled time-limit calculation.
 ##
-## The limit is anchored to how hard the maze actually is to SOLVE, measured as
-## two real walking times at the player's speed:
-##   * optimal_time -- walk the shortest start->exit route (an expert who can
-##     already see the path).
-##   * blind_time   -- a wall-follower's route (someone discovering the maze);
-##     this grows a lot with misleading branches, so it tracks real difficulty.
+## The limit is anchored to the SHORTEST start->exit route walked at the
+## character's speed (the maze is "perfect" -- exactly one route between any two
+## cells -- so the start->exit distance IS the shortest path):
 ##
-##     time_limit = optimal_time + g * (blind_time - optimal_time)
+##     base       = shortest_path_px / speed         # optimal walking time
+##     time_limit = base + (X / 3) * base = base * (1 + X / 3)
 ##
-## g (generosity, 0..1) places you between expert and blind. It starts generous
-## and eases down as tiers climb, so harder mazes give MORE absolute time (more
-## to solve) while expecting a little more skill.
+## X is a per-tier buffer that starts generous and eases toward tight as mazes
+## get harder. It begins at X_START (3) on tier 1 -> the player gets a full
+## extra base of time (2x the optimal walk, lots of room to explore), and decays
+## smoothly toward X_MIN (1) -> 1.33x the optimal walk on the hardest tiers.
+##
+## The decay is exponential with an e-folding length of X_DECAY_TIERS tiers, so
+## it eases down gradually -- "not fast, not slow" -- and approaches, without
+## ever dropping below, X_MIN.
 
-const G_START := 0.55    ## Generosity at tier 1.
-const G_DECAY := 0.015   ## Reduced per tier.
-const G_MIN := 0.35      ## Floor.
+const X_START := 3.0        ## Buffer X at tier 1.
+const X_MIN := 1.0          ## Asymptotic floor X as tiers climb.
+const X_DECAY_TIERS := 7.0  ## e-folding length (in tiers) of the ease toward X_MIN.
+const EXTRA_SECONDS := 5.0  ## Flat bonus added to every maze on every tier.
 
 
-## Generosity factor for a tier.
-static func generosity(tier: int) -> float:
-	return clampf(G_START - float(maxi(tier, 1) - 1) * G_DECAY, G_MIN, G_START)
+## Per-tier buffer factor X: starts at X_START, eases asymptotically toward X_MIN.
+static func buffer_factor(tier: int) -> float:
+	var t := float(maxi(tier, 1) - 1)
+	return X_MIN + (X_START - X_MIN) * exp(-t / X_DECAY_TIERS)
 
 
-## Time limit (seconds) from the two route lengths in pixels.
-static func compute_time_limit(optimal_px: float, blind_px: float, tier: int, speed: float) -> float:
-	var s := maxf(speed, 1.0)
-	var optimal := optimal_px / s
-	var blind := blind_px / s
-	return optimal + generosity(tier) * maxf(blind - optimal, 0.0)
+## Time limit (seconds) from the shortest-path length in pixels.
+static func compute_time_limit(shortest_px: float, tier: int, speed: float) -> float:
+	var base := shortest_px / maxf(speed, 1.0)
+	return base * (1.0 + buffer_factor(tier) / 3.0) + EXTRA_SECONDS
 
 
 ## Convenience overload from a maze. [param step_px] is the world distance per
 ## step (centre-to-centre of adjacent cells).
 static func compute_for_maze(maze: MazeGenerator.MazeData, tier: int, step_px: float, speed: float) -> float:
-	return compute_time_limit(
-		float(maze.solution_length) * step_px,
-		float(maze.explore_length) * step_px,
-		tier, speed)
+	return compute_time_limit(float(maze.solution_length) * step_px, tier, speed)

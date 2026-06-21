@@ -1,138 +1,158 @@
 class_name FootstepForge
 extends RefCounted
 
-## Synthesizes short, believable footstep sounds procedurally (no audio assets),
-## one per ground surface. Real footsteps are broadband *impacts*, not musical
-## notes, so each step is built from three physically-motivated layers:
+## Subtle, soft footstep bank for the six maze floor materials.
 ##
-##   1. a sharp filtered NOISE TRANSIENT  -> the foot making contact ("click")
-##   2. a few short DAMPED PARTIALS       -> the material's resonant colour
-##   3. a textured NOISE TAIL             -> the scuff / crunch / sizzle after
-##
-## Every layer is amplitude-bounded and the mix is clamped, so output can never
-## clip or blow up. Deterministic and cached per surface.
+## Deliberately gentle: each step is a short, low, rounded "tap" — a soft body
+## thump plus a brief low-passed puff of texture — never a harsh click or
+## cartoonish slap. Four deterministic variants per surface keep running from
+## repeating the exact same sample, with no bundled audio files.
 
 const RATE := 44100
-const FADE := 0.008  ## Final fade-out (s) so the buffer never ends on a click.
+const VARIANT_COUNT := 4
+const FADE_SECONDS := 0.010
+const SURFACES := ["grass", "gravel", "stone", "metal", "ice", "ember",
+	"sand", "mud", "bone", "ash", "crystal", "water"]
+const TARGET_PEAK := 0.5   ## Normalisation ceiling — keeps steps quiet and even.
 
 static var _cache: Dictionary = {}
 
 
-## Footstep stream for a surface: "grass", "stone", "metal", "ice", "lava".
-static func get_step(surface: String) -> AudioStreamWAV:
-	if not _cache.has(surface):
-		_cache[surface] = _make(surface)
-	return _cache[surface]
+## Return one cached variation for a surface. Unknown surfaces safely use stone.
+static func get_step(surface: String, variant: int = 0) -> AudioStreamWAV:
+	var safe_surface := _safe_surface(surface)
+	var safe_variant := absi(variant) % VARIANT_COUNT
+	var key := "%s:%d" % [safe_surface, safe_variant]
+	if not _cache.has(key):
+		_cache[key] = _make(safe_surface, safe_variant)
+	return _cache[key]
 
 
-## Per-surface synthesis parameters. Keys:
-##   dur, gain, attack                     -- overall length / level / onset
-##   burst_gain, burst_tau                 -- contact transient level / decay
-##   burst_lp (0..1), burst_hp (0..1)      -- transient tone (low-pass / high-pass)
-##   tail_gain, tail_tau, tail_lp, tail_hp -- texture tail (0 gain disables)
-##   partials: Array of [freq_hz, decay_tau_s, gain]  -- damped resonant colour
+## Warm and return the complete variation bank for a surface.
+static func get_steps(surface: String) -> Array[AudioStreamWAV]:
+	var result: Array[AudioStreamWAV] = []
+	for variant in VARIANT_COUNT:
+		result.append(get_step(surface, variant))
+	return result
+
+
+static func surface_names() -> PackedStringArray:
+	return PackedStringArray(SURFACES)
+
+
+static func supports(surface: String) -> bool:
+	return SURFACES.has(surface)
+
+
+static func _safe_surface(surface: String) -> String:
+	return surface if supports(surface) else "stone"
+
+
+## Per-surface tone. Everything is intentionally low and short:
+##   body_*   a soft sine thump (the weight of the footfall)
+##   puff_*   a brief low-passed noise breath (the texture of the floor)
+## Hard floors get a touch more body and a slightly brighter (but still soft)
+## puff; soft floors are duller and quieter.
 static func _params(surface: String) -> Dictionary:
 	match surface:
-		"grass":  # soft brushy "fffp", no real pitch
-			return {
-				"dur": 0.20, "gain": 0.80, "attack": 0.006,
-				"burst_gain": 0.45, "burst_tau": 0.012, "burst_lp": 0.70, "burst_hp": 0.25,
-				"tail_gain": 0.50, "tail_tau": 0.040, "tail_lp": 0.90, "tail_hp": 0.30,
-				"partials": [[200.0, 0.015, 0.06]],
-			}
-		"metal":  # bright "clank" with an inharmonic ring
-			return {
-				"dur": 0.26, "gain": 0.70, "attack": 0.0016,
-				"burst_gain": 0.40, "burst_tau": 0.0025, "burst_lp": 0.85, "burst_hp": 0.20,
-				"tail_gain": 0.08, "tail_tau": 0.020, "tail_lp": 0.90, "tail_hp": 0.30,
-				"partials": [[540.0, 0.09, 0.22], [1190.0, 0.06, 0.16],
-					[2150.0, 0.04, 0.10], [3300.0, 0.025, 0.06]],
-			}
-		"ice":    # crisp glassy "tick" with a crackle tail
-			return {
-				"dur": 0.14, "gain": 0.80, "attack": 0.0012,
-				"burst_gain": 0.50, "burst_tau": 0.0016, "burst_lp": 0.95, "burst_hp": 0.40,
-				"tail_gain": 0.30, "tail_tau": 0.013, "tail_lp": 0.95, "tail_hp": 0.45,
-				"partials": [[2600.0, 0.02, 0.12], [4100.0, 0.012, 0.07]],
-			}
-		"lava":   # low muffled "thmp" with a soft sizzle
-			return {
-				"dur": 0.27, "gain": 0.85, "attack": 0.004,
-				"burst_gain": 0.50, "burst_tau": 0.006, "burst_lp": 0.20, "burst_hp": 0.0,
-				"tail_gain": 0.24, "tail_tau": 0.070, "tail_lp": 0.25, "tail_hp": 0.0,
-				"partials": [[70.0, 0.05, 0.40], [130.0, 0.03, 0.18]],
-			}
-		_:        # "stone" -- soft, dry "tok"
-			return {
-				"dur": 0.17, "gain": 0.85, "attack": 0.0022,
-				"burst_gain": 0.60, "burst_tau": 0.0035, "burst_lp": 0.35, "burst_hp": 0.0,
-				"tail_gain": 0.18, "tail_tau": 0.020, "tail_lp": 0.50, "tail_hp": 0.0,
-				"partials": [[150.0, 0.03, 0.32], [300.0, 0.013, 0.14]],
-			}
+		"grass":
+			return {"dur": 0.085, "gain": 0.80,
+				"body_freq": 132.0, "body_gain": 0.22, "body_tau": 0.022,
+				"puff_gain": 0.26, "puff_lp": 0.16, "puff_tau": 0.020}
+		"gravel":
+			return {"dur": 0.095, "gain": 0.88,
+				"body_freq": 150.0, "body_gain": 0.24, "body_tau": 0.020,
+				"puff_gain": 0.34, "puff_lp": 0.30, "puff_tau": 0.018}
+		"metal":
+			return {"dur": 0.090, "gain": 0.82,
+				"body_freq": 188.0, "body_gain": 0.30, "body_tau": 0.026,
+				"puff_gain": 0.18, "puff_lp": 0.40, "puff_tau": 0.012}
+		"ice":
+			return {"dur": 0.080, "gain": 0.80,
+				"body_freq": 205.0, "body_gain": 0.20, "body_tau": 0.016,
+				"puff_gain": 0.22, "puff_lp": 0.46, "puff_tau": 0.010}
+		"ember":
+			return {"dur": 0.100, "gain": 0.86,
+				"body_freq": 110.0, "body_gain": 0.32, "body_tau": 0.030,
+				"puff_gain": 0.20, "puff_lp": 0.20, "puff_tau": 0.022}
+		"sand": # dry, dull, powdery scuff.
+			return {"dur": 0.088, "gain": 0.80,
+				"body_freq": 140.0, "body_gain": 0.20, "body_tau": 0.020,
+				"puff_gain": 0.30, "puff_lp": 0.22, "puff_tau": 0.018}
+		"mud": # wet, low, squelchy.
+			return {"dur": 0.105, "gain": 0.84,
+				"body_freq": 105.0, "body_gain": 0.26, "body_tau": 0.028,
+				"puff_gain": 0.32, "puff_lp": 0.12, "puff_tau": 0.024}
+		"bone": # hard, hollow, dry click.
+			return {"dur": 0.082, "gain": 0.82,
+				"body_freq": 220.0, "body_gain": 0.28, "body_tau": 0.018,
+				"puff_gain": 0.16, "puff_lp": 0.50, "puff_tau": 0.010}
+		"ash": # soft, muffled, powdery.
+			return {"dur": 0.092, "gain": 0.80,
+				"body_freq": 120.0, "body_gain": 0.22, "body_tau": 0.024,
+				"puff_gain": 0.28, "puff_lp": 0.18, "puff_tau": 0.020}
+		"crystal": # bright, glassy, light.
+			return {"dur": 0.080, "gain": 0.80,
+				"body_freq": 235.0, "body_gain": 0.22, "body_tau": 0.015,
+				"puff_gain": 0.20, "puff_lp": 0.52, "puff_tau": 0.010}
+		"water": # shallow wet splash.
+			return {"dur": 0.100, "gain": 0.82,
+				"body_freq": 125.0, "body_gain": 0.20, "body_tau": 0.024,
+				"puff_gain": 0.34, "puff_lp": 0.14, "puff_tau": 0.022}
+		_: # stone: a clean, soft, dry tap.
+			return {"dur": 0.085, "gain": 0.85,
+				"body_freq": 165.0, "body_gain": 0.30, "body_tau": 0.022,
+				"puff_gain": 0.20, "puff_lp": 0.28, "puff_tau": 0.014}
 
 
-static func _make(surface: String) -> AudioStreamWAV:
+static func _make(surface: String, variant: int) -> AudioStreamWAV:
 	var p := _params(surface)
-	var dur: float = p["dur"]
-	var gain: float = p["gain"]
-	var attack: float = p["attack"]
-	var burst_gain: float = p["burst_gain"]
-	var burst_tau: float = p["burst_tau"]
-	var burst_lp: float = p["burst_lp"]
-	var burst_hp: float = p["burst_hp"]
-	var tail_gain: float = p["tail_gain"]
-	var tail_tau: float = p["tail_tau"]
-	var tail_lp: float = p["tail_lp"]
-	var tail_hp: float = p["tail_hp"]
-	var partials: Array = p["partials"]
-
-	var n := int(RATE * dur)
-	var data := PackedByteArray()
-	data.resize(n * 2)
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(surface)
+	rng.seed = hash("%s_softstep_%d" % [surface, variant])
 
-	# One-pole filter states (separate chains for the transient and the tail).
-	var b_lp := 0.0
-	var b_hp := 0.0
-	var t_lp := 0.0
-	var t_hp := 0.0
+	# Tiny per-take changes keep the bank organic without changing its material.
+	var dur: float = p["dur"] * rng.randf_range(0.95, 1.06)
+	var gain: float = p["gain"] * rng.randf_range(0.94, 1.03)
+	var pitch: float = rng.randf_range(0.95, 1.05)
+	var body_freq: float = p["body_freq"] * pitch
+	var body_gain: float = p["body_gain"] * rng.randf_range(0.9, 1.08)
+	var body_tau: float = p["body_tau"]
+	var puff_gain: float = p["puff_gain"] * rng.randf_range(0.9, 1.08)
+	var puff_lp: float = p["puff_lp"]
+	var puff_tau: float = p["puff_tau"]
+	var attack := 0.004   ## Rounded onset — no sharp click.
 
-	for i in n:
+	var sample_count := int(RATE * dur)
+	var samples := PackedFloat32Array()
+	samples.resize(sample_count)
+
+	var puff_low := 0.0
+	var peak := 0.001
+	for i in sample_count:
 		var t := float(i) / RATE
-		var w := rng.randf_range(-1.0, 1.0)
+		# Soft sine body that slides down a little in pitch as it decays.
+		var freq := body_freq * (1.0 - 0.18 * (t / dur))
+		var body := sin(TAU * freq * t) * exp(-t / body_tau) * body_gain
+		# Brief low-passed noise puff (floor texture), gentle.
+		puff_low += (rng.randf_range(-1.0, 1.0) - puff_low) * puff_lp
+		var puff := puff_low * exp(-t / puff_tau) * puff_gain
 
-		# 1. Contact transient: white noise shaped to the surface's brightness.
-		b_lp += (w - b_lp) * burst_lp
-		var burst := b_lp
-		if burst_hp > 0.0:
-			b_hp += (burst - b_hp) * burst_hp
-			burst -= b_hp
-		burst *= burst_gain * exp(-t / burst_tau)
-
-		# 2. Damped partials: the material's resonant "colour".
-		var tone := 0.0
-		for pt in partials:
-			tone += sin(TAU * pt[0] * t) * exp(-t / pt[1]) * pt[2]
-
-		# 3. Texture tail: a longer, softer filtered-noise scuff/crunch/sizzle.
-		var tail := 0.0
-		if tail_gain > 0.0:
-			t_lp += (w - t_lp) * tail_lp
-			tail = t_lp
-			if tail_hp > 0.0:
-				t_hp += (tail - t_hp) * tail_hp
-				tail -= t_hp
-			tail *= tail_gain * exp(-t / tail_tau)
-
-		# Envelope: smooth onset (no click) + a short fade into the buffer end.
 		var env := minf(t / attack, 1.0)
-		var rem := dur - t
-		if rem < FADE:
-			env *= maxf(rem / FADE, 0.0)
+		var remaining := dur - t
+		if remaining < FADE_SECONDS:
+			env *= maxf(remaining / FADE_SECONDS, 0.0)
 
-		var v := clampf((burst + tone + tail) * env * gain, -1.0, 1.0)
-		data.encode_s16(i * 2, int(v * 32767.0))
+		var value := (body + puff) * env * gain
+		samples[i] = value
+		peak = maxf(peak, absf(value))
+
+	# Normalise every step to the same quiet ceiling so no surface jumps out.
+	var scale := TARGET_PEAK / peak
+	var data := PackedByteArray()
+	data.resize(sample_count * 2)
+	for i in sample_count:
+		var value := clampf(samples[i] * scale, -TARGET_PEAK, TARGET_PEAK)
+		data.encode_s16(i * 2, int(value * 32767.0))
 
 	var wav := AudioStreamWAV.new()
 	wav.format = AudioStreamWAV.FORMAT_16_BITS

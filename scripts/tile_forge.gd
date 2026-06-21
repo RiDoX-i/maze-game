@@ -69,6 +69,20 @@ static func _bevel(img: Image, light: Color, dark: Color) -> void:
 		_blk(img, i, LOGICAL - 1, dark)
 		_blk(img, LOGICAL - 1, i, dark)
 
+## Ambient occlusion: deepen the interior toward the bottom-right edges so a run
+## of walls reads as stacked 3D cubes (lit from the top-left). Applied to EVERY
+## biome on top of the per-tile bevel for a richer, chunkier block look.
+static func _ao(img: Image) -> void:
+	var depth := SCALE * 3
+	for y in SIZE:
+		for x in SIZE:
+			var edge: int = mini(SIZE - 1 - x, SIZE - 1 - y)
+			if edge >= depth:
+				continue
+			var f := lerpf(0.74, 1.0, float(edge) / float(depth))
+			var col := img.get_pixel(x, y)
+			img.set_pixel(x, y, Color(col.r * f, col.g * f, col.b * f, col.a))
+
 ## Jagged near-vertical bright line (lava vein / rock crack).
 static func _vein(img: Image, base_x: int, rng: RandomNumberGenerator, cols: Array) -> void:
 	var x := base_x
@@ -112,6 +126,33 @@ static func _floor(theme_id: String) -> Image:
 			_noise(img, _c("#1d1c22"), [_c("#16151a"), _c("#26242c")], rng, 0.5)
 			for _i in 4:
 				_blk(img, rng.randi() % LOGICAL, rng.randi() % LOGICAL, _c("#3a2a2a"))
+		"ruins":  # warm sandstone dust
+			_noise(img, _c("#cbb178"), [_c("#bda169"), _c("#d8c08a"), _c("#b6985e")], rng, 0.55)
+			for _i in 5:
+				_blk(img, rng.randi() % LOGICAL, rng.randi() % LOGICAL, _c("#a98f5c"))
+		"swamp":  # murky bog floor
+			_noise(img, _c("#3d4a2f"), [_c("#33402a"), _c("#465436"), _c("#2c3826")], rng, 0.55)
+			for _i in 5:
+				_blk(img, rng.randi() % LOGICAL, rng.randi() % LOGICAL, _c("#2b3a3f"))
+		"catacomb":  # pale bone-dust flagstone with grout
+			_noise(img, _c("#6a6660"), [_c("#5c5852"), _c("#787268")], rng, 0.45)
+			for i in LOGICAL:
+				_blk(img, i, 0, _c("#47433d"))
+				_blk(img, 0, i, _c("#47433d"))
+				_blk(img, i, 8, _c("#47433d"))
+				_blk(img, 8, i, _c("#47433d"))
+		"volcanic":  # dark obsidian (so lava walls pop)
+			_noise(img, _c("#17151a"), [_c("#100f13"), _c("#201d26")], rng, 0.5)
+			for _i in 4:
+				_blk(img, rng.randi() % LOGICAL, rng.randi() % LOGICAL, _c("#5a2a1c"))
+		"crystal":  # deep violet rock
+			_noise(img, _c("#241a33"), [_c("#1d1429"), _c("#2e2240")], rng, 0.5)
+			for _i in 4:
+				_blk(img, rng.randi() % LOGICAL, rng.randi() % LOGICAL, _c("#6a4f9a"))
+		"sunken":  # dark teal water-stone
+			_noise(img, _c("#1f4744"), [_c("#1a3c3a"), _c("#27534f"), _c("#183a37")], rng, 0.5)
+			for _i in 4:
+				_blk(img, rng.randi() % LOGICAL, rng.randi() % LOGICAL, _c("#5fbfb4"))
 		_:
 			_noise(img, _c("#353844"), [_c("#2c2f39"), _c("#3f4350")], rng, 0.5)
 	return img
@@ -162,9 +203,42 @@ static func _wall(theme_id: String, variant: int) -> Image:
 			_vein(img, 4 + variant % 2, rng, [_c("#ff7a2e"), _c("#ffc24a"), _c("#ffe08a")])
 			_vein(img, 11 - variant % 2, rng, [_c("#ff7a2e"), _c("#ffb24a")])
 			_bevel(img, _c("#3e241c"), _c("#160a08"))
+		"ruins":
+			_bricks(img, _c("#9c7f50"), _c("#caa46e"), _c("#b08f5e"), rng)
+			_bevel(img, _c("#e0c189"), _c("#7a5f3a"))
+		"swamp":
+			_noise(img, _c("#4a5b3a"), [_c("#3e4d32"), _c("#56683f"), _c("#354529")], rng, 0.6)
+			for _i in 12:  # moss glints
+				_blk(img, rng.randi() % LOGICAL, rng.randi() % LOGICAL, _c("#7fa05a"))
+			_vein(img, 6 + variant % 3, rng, [_c("#2f3d28"), _c("#283520")])
+			_bevel(img, _c("#6f8a55"), _c("#283318"))
+		"catacomb":
+			_noise(img, _c("#cfc7ad"), [_c("#bdb59c"), _c("#ddd6bd"), _c("#b1a98f")], rng, 0.55)
+			for _i in 10:  # dark sockets/pits, like embedded bone
+				_blk(img, 1 + rng.randi() % (LOGICAL - 2), 1 + rng.randi() % (LOGICAL - 2), _c("#5a5446"))
+			_bevel(img, _c("#e6dfc6"), _c("#7d7560"))
+		"volcanic":
+			_noise(img, _c("#211a1f"), [_c("#171216"), _c("#2a2128")], rng, 0.55)
+			_vein(img, 4 + variant % 2, rng, [_c("#ff5a2a"), _c("#ffae3c"), _c("#ffe08a")])
+			_vein(img, 11 - variant % 2, rng, [_c("#ff5a2a"), _c("#ff8a3c")])
+			_bevel(img, _c("#3a2630"), _c("#0c0a0d"))
+		"crystal":
+			_noise(img, _c("#3a2a5c"), [_c("#33264f"), _c("#46356e"), _c("#2c2046")], rng, 0.55)
+			for i in LOGICAL:  # bright crystalline facets (glow flows along these)
+				if (i + variant) % 4 == 0:
+					_blk(img, i, i, _c("#e6ccff"))
+					_blk(img, (i + 8) % LOGICAL, i, _c("#c79bff"))
+			_bevel(img, _c("#7a5fb0"), _c("#1d1430"))
+		"sunken":
+			_noise(img, _c("#2f5a55"), [_c("#28504b"), _c("#386b64"), _c("#214640")], rng, 0.55)
+			for _i in 10:  # algae glints
+				_blk(img, rng.randi() % LOGICAL, rng.randi() % LOGICAL, _c("#6fcfc4"))
+			_vein(img, 7 + variant % 3, rng, [_c("#173a36"), _c("#14322f")])
+			_bevel(img, _c("#5a948c"), _c("#143331"))
 		_:
 			_noise(img, _c("#6b6256"), [_c("#5a5246"), _c("#7c7264")], rng, 0.6)
 			_bevel(img, _c("#8a8074"), _c("#3f392f"))
+	_ao(img)
 	return img
 
 

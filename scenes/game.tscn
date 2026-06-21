@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://b8mzrngame01"]
+[gd_scene load_steps=18 format=3 uid="uid://b8mzrngame01"]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/maze_renderer.gd" id="2_render"]
@@ -6,6 +6,16 @@
 [ext_resource type="Script" path="res://scripts/virtual_joystick.gd" id="4_stick"]
 [ext_resource type="PackedScene" uid="uid://b8mzrnhud001" path="res://scenes/hud.tscn" id="5_hud"]
 [ext_resource type="Script" path="res://scripts/character_visual.gd" id="6_char"]
+[ext_resource type="Script" path="res://scripts/trap_layer.gd" id="7_traps"]
+[ext_resource type="Script" path="res://scripts/game_background.gd" id="8_bg"]
+[ext_resource type="Script" path="res://scripts/speech_bubble.gd" id="9_bubble"]
+[ext_resource type="Script" path="res://scripts/pause_menu.gd" id="10_pause"]
+[ext_resource type="Script" path="res://scripts/collectibles.gd" id="11_coins"]
+[ext_resource type="Script" path="res://scripts/path_guide.gd" id="12_path"]
+[ext_resource type="Script" path="res://scripts/decoration_layer.gd" id="13_decor"]
+[ext_resource type="Script" path="res://scripts/swipe_input.gd" id="14_swipe"]
+[ext_resource type="Script" path="res://scripts/run_trail.gd" id="15_trail"]
+[ext_resource type="Script" path="res://scripts/nav_guide.gd" id="16_nav"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_player"]
 radius = 8.0
@@ -13,8 +23,38 @@ radius = 8.0
 [node name="Game" type="Node2D"]
 script = ExtResource("1_game")
 
+[node name="Ambient" type="CanvasModulate" parent="."]
+
+[node name="BG" type="CanvasLayer" parent="."]
+layer = -10
+
+[node name="GameBackground" type="Control" parent="BG"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("8_bg")
+
 [node name="MazeRenderer" type="Node2D" parent="."]
 script = ExtResource("2_render")
+
+[node name="Decorations" type="Node2D" parent="."]
+script = ExtResource("13_decor")
+
+[node name="TrapLayer" type="Node2D" parent="."]
+script = ExtResource("7_traps")
+
+[node name="Collectibles" type="Node2D" parent="."]
+script = ExtResource("11_coins")
+
+[node name="PathGuide" type="Node2D" parent="."]
+script = ExtResource("12_path")
+
+[node name="NavGuide" type="Node2D" parent="."]
+script = ExtResource("16_nav")
 
 [node name="Player" type="CharacterBody2D" parent="."]
 motion_mode = 1
@@ -23,12 +63,27 @@ script = ExtResource("3_player")
 [node name="Visual" type="Node2D" parent="Player"]
 script = ExtResource("6_char")
 
+[node name="SpeechBubble" type="Node2D" parent="Player"]
+script = ExtResource("9_bubble")
+
+[node name="RunTrail" type="Node2D" parent="Player"]
+script = ExtResource("15_trail")
+
 [node name="Collision" type="CollisionShape2D" parent="Player"]
 shape = SubResource("CircleShape2D_player")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
 [node name="UI" type="CanvasLayer" parent="."]
+
+[node name="SwipeInput" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("14_swipe")
 
 [node name="VirtualJoystick" type="Control" parent="UI"]
 layout_mode = 3
@@ -41,3 +96,22 @@ grow_vertical = 2
 script = ExtResource("4_stick")
 
 [node name="HUD" parent="UI" instance=ExtResource("5_hud")]
+
+[node name="Flash" type="ColorRect" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="PauseMenu" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("10_pause")

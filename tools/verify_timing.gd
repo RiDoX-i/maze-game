@@ -37,7 +37,7 @@ func _initialize() -> void:
 		sol /= SEEDS; junc /= SEEDS; dead /= SEEDS; wf /= SEEDS
 		var opt_time := sol * STEP / SPEED
 		var wf_time := wf * STEP / SPEED
-		var budget := TM.compute_time_limit(sol * STEP, wf * STEP, tier, SPEED)
+		var budget := TM.compute_time_limit(sol * STEP, tier, SPEED)
 		print("%4d | %4d | %.2f | %4.0f | %4.0f | %4.0f | %9.0f | %6.1f | %6.1f | %7.1f"
 			% [tier, dims.x, branch, sol, junc, dead, wf, opt_time, wf_time, budget])
 	quit(0)

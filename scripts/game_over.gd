@@ -10,7 +10,9 @@ const MENU_SCENE := "res://scenes/main_menu.tscn"
 
 
 func _ready() -> void:
-	_result_label.text = "YOU REACHED TIER %d" % GameState.last_tier_reached
+	PixelUI.apply(self)
+	var prefix := "TRAP MODE - " if GameState.is_trap_mode() else ""
+	_result_label.text = "%sTIER %d" % [prefix, GameState.last_tier_reached]
 
 
 func _on_retry_pressed() -> void:

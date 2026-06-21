@@ -1,0 +1,111 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign_complete.gd" id="1_complete"]
+[ext_resource type="Script" path="res://scripts/pixel_label.gd" id="2_plabel"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/menu_bg.png" id="3_bg"]
+
+[node name="CampaignComplete" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_complete")
+
+[node name="Background" type="TextureRect" parent="."]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Title" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 300.0
+offset_bottom = 390.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "TRAP MASTER"
+color = Color(1, 0.823529, 0.247059, 1)
+pixel_scale = 8
+align = 1
+
+[node name="Message" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 420.0
+offset_bottom = 470.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "20 LEVELS CLEARED"
+color = Color(0.35, 0.95, 0.72, 1)
+pixel_scale = 4
+align = 1
+
+[node name="Buttons" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = 100.0
+offset_right = 160.0
+offset_bottom = 320.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 24
+
+[node name="ReplayButton" type="Button" parent="Buttons"]
+custom_minimum_size = Vector2(320, 88)
+layout_mode = 2
+
+[node name="Label" type="Control" parent="Buttons/ReplayButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "REPLAY"
+pixel_scale = 6
+align = 1
+
+[node name="MenuButton" type="Button" parent="Buttons"]
+custom_minimum_size = Vector2(320, 76)
+layout_mode = 2
+
+[node name="Label" type="Control" parent="Buttons/MenuButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "MAIN MENU"
+pixel_scale = 5
+align = 1
+
+[connection signal="pressed" from="Buttons/ReplayButton" to="." method="_on_replay_pressed"]
+[connection signal="pressed" from="Buttons/MenuButton" to="." method="_on_menu_pressed"]

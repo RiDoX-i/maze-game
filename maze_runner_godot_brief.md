@@ -156,3 +156,26 @@ res://
 
 - Actual pixel art asset creation (use placeholder colored rectangles/tiles until real art is supplied, e.g., via Aseprite)
 - Sound design / final audio assets (use placeholder/silent stubs until supplied)
+
+
+
+-----
+
+## 11. Game Modes (current)
+
+The original endless loop above is now one of three selectable modes:
+
+- **CLASSIC** — a 1000-level campaign. Levels are beaten in order; clearing a
+  level unlocks the next and locks the one just cleared (no replays). Each
+  level's difficulty is a deterministic function of its number, so every retry
+  plays at the *same* difficulty (a fresh layout, same challenge). There are no
+  hearts and no game-over: running out of time simply reloads a same-difficulty
+  map. Every block of 10 levels is a "chapter" that shares one art theme. A
+  level-select screen (`scenes/level_select.tscn`) shows the chapters with
+  theme-tinted cards and resumes at the player's current level. Progress
+  persists via `scripts/campaign_progress.gd` (`user://campaign_progress.json`).
+  Difficulty curve + helpers live in `scripts/game_state.gd` (`campaign_*`).
+- **ENDLESS** — the original tier-based loop described in sections 1–6 (3 mazes
+  per tier, hearts, 20% bonus heart, scaling forever). This mode owns the World
+  Records board.
+- **TRAP** — the fixed prepared-campaign mode (`scripts/prepared_trap_maps.gd`).

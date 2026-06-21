@@ -21,6 +21,10 @@ const C_SHIRT_D := Color("#2b7fb0")
 const C_PANTS := Color("#394150")
 const C_SHOE := Color("#23272f")
 
+## Force the running animation with no physics body (used by the main menu, where
+## the character runs in place above a scrolling surface).
+@export var auto_run := false
+
 var _body: CharacterBody2D
 var _t := 0.0
 var _run := 0.0
@@ -36,12 +40,17 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	var speed := 0.0
-	if _body != null:
-		speed = _body.velocity.length()
-		if absf(_body.velocity.x) > 8.0:
-			_facing = signf(_body.velocity.x)
-	var moving := speed > 12.0
+	var moving := false
+	if auto_run:
+		moving = true
+		_facing = 1.0
+	else:
+		var speed := 0.0
+		if _body != null:
+			speed = _body.velocity.length()
+			if absf(_body.velocity.x) > 8.0:
+				_facing = signf(_body.velocity.x)
+		moving = speed > 12.0
 
 	if moving:
 		_run += delta * 11.0

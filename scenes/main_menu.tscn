@@ -1,33 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://b8mzrnmenu01"]
+[gd_scene load_steps=5 format=3 uid="uid://b8mzrnmenu01"]
 
 [ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_menu"]
 [ext_resource type="Script" path="res://scripts/pixel_label.gd" id="2_plabel"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/menu_bg.png" id="3_bg"]
 [ext_resource type="Script" path="res://scripts/character_visual.gd" id="4_char"]
-
-[sub_resource type="StyleBoxFlat" id="sb_normal"]
-bg_color = Color(0.227451, 0.172549, 0.4, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.423529, 0.360784, 0.905882, 1)
-
-[sub_resource type="StyleBoxFlat" id="sb_hover"]
-bg_color = Color(0.317647, 0.247059, 0.541176, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.560784, 0.486275, 1, 1)
-
-[sub_resource type="StyleBoxFlat" id="sb_pressed"]
-bg_color = Color(0.156863, 0.121569, 0.301961, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.423529, 0.360784, 0.905882, 1)
+[ext_resource type="Script" path="res://scripts/menu_background.gd" id="6_bg"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -38,8 +14,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
 
-[node name="Background" type="TextureRect" parent="."]
-texture_filter = 1
+[node name="Background" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -47,9 +22,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("3_bg")
-expand_mode = 1
-stretch_mode = 6
+script = ExtResource("6_bg")
 
 [node name="Title" type="Control" parent="."]
 layout_mode = 1
@@ -74,7 +47,7 @@ offset_bottom = 290.0
 grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("2_plabel")
-text = "ESCAPE BEFORE TIME RUNS OUT"
+text = "CHOOSE YOUR CHALLENGE"
 color = Color(0.764706, 0.745098, 1, 1)
 pixel_scale = 3
 align = 1
@@ -85,6 +58,94 @@ scale = Vector2(8, 8)
 
 [node name="Character" type="Node2D" parent="Mascot"]
 script = ExtResource("4_char")
+auto_run = true
+
+[node name="RecordsButton" type="Button" parent="."]
+custom_minimum_size = Vector2(236, 64)
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -260.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 88.0
+grow_horizontal = 0
+
+[node name="Label" type="Control" parent="RecordsButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "WORLD RECORDS"
+color = Color(1, 0.823529, 0.247059, 1)
+pixel_scale = 2
+align = 1
+
+[node name="SpeedsButton" type="Button" parent="."]
+custom_minimum_size = Vector2(180, 64)
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 204.0
+offset_bottom = 88.0
+grow_horizontal = 1
+
+[node name="Label" type="Control" parent="SpeedsButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "SPEEDS"
+color = Color(1, 0.823529, 0.247059, 1)
+pixel_scale = 3
+align = 1
+
+[node name="ControlsButton" type="Button" parent="."]
+custom_minimum_size = Vector2(236, 60)
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -260.0
+offset_top = 100.0
+offset_right = -24.0
+offset_bottom = 160.0
+grow_horizontal = 0
+
+[node name="Label" type="Control" parent="ControlsButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "CONTROLS"
+color = Color(0.764706, 0.745098, 1, 1)
+pixel_scale = 2
+align = 1
 
 [node name="Buttons" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -94,19 +155,16 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -160.0
-offset_top = -300.0
+offset_top = -480.0
 offset_right = 160.0
-offset_bottom = -60.0
+offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 24
+theme_override_constants/separation = 22
 
 [node name="PlayButton" type="Button" parent="Buttons"]
 custom_minimum_size = Vector2(320, 88)
 layout_mode = 2
-theme_override_styles/normal = SubResource("sb_normal")
-theme_override_styles/hover = SubResource("sb_hover")
-theme_override_styles/pressed = SubResource("sb_pressed")
 
 [node name="Label" type="Control" parent="Buttons/PlayButton"]
 layout_mode = 1
@@ -119,16 +177,54 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_plabel")
-text = "PLAY"
+text = "CLASSIC"
+color = Color(1, 0.823529, 0.247059, 1)
 pixel_scale = 6
+align = 1
+
+[node name="EndlessButton" type="Button" parent="Buttons"]
+custom_minimum_size = Vector2(320, 84)
+layout_mode = 2
+
+[node name="Label" type="Control" parent="Buttons/EndlessButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "ENDLESS"
+color = Color(0.490196, 0.882353, 1, 1)
+pixel_scale = 5
+align = 1
+
+[node name="TrapButton" type="Button" parent="Buttons"]
+custom_minimum_size = Vector2(320, 84)
+layout_mode = 2
+
+[node name="Label" type="Control" parent="Buttons/TrapButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_plabel")
+text = "TRAP MODE"
+color = Color(1, 0.403922, 0.356863, 1)
+pixel_scale = 5
 align = 1
 
 [node name="QuitButton" type="Button" parent="Buttons"]
 custom_minimum_size = Vector2(320, 76)
 layout_mode = 2
-theme_override_styles/normal = SubResource("sb_normal")
-theme_override_styles/hover = SubResource("sb_hover")
-theme_override_styles/pressed = SubResource("sb_pressed")
 
 [node name="Label" type="Control" parent="Buttons/QuitButton"]
 layout_mode = 1
@@ -145,5 +241,10 @@ text = "QUIT"
 pixel_scale = 5
 align = 1
 
-[connection signal="pressed" from="Buttons/PlayButton" to="." method="_on_play_pressed"]
+[connection signal="pressed" from="RecordsButton" to="." method="_on_records_pressed"]
+[connection signal="pressed" from="SpeedsButton" to="." method="_on_speeds_pressed"]
+[connection signal="pressed" from="ControlsButton" to="." method="_on_controls_pressed"]
+[connection signal="pressed" from="Buttons/PlayButton" to="." method="_on_classic_pressed"]
+[connection signal="pressed" from="Buttons/EndlessButton" to="." method="_on_endless_pressed"]
+[connection signal="pressed" from="Buttons/TrapButton" to="." method="_on_trap_pressed"]
 [connection signal="pressed" from="Buttons/QuitButton" to="." method="_on_quit_pressed"]

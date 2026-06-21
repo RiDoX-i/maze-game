@@ -32,28 +32,45 @@ func _ready() -> void:
 	_refresh()
 
 
-func _text_width_px() -> int:
-	return text.length() * PixelFont.advance() * pixel_scale
+func _line_width_px(line: String) -> int:
+	return line.length() * PixelFont.advance() * pixel_scale
+
+
+func _max_width_px() -> int:
+	var widest := 0
+	for line in text.split("\n"):
+		widest = maxi(widest, _line_width_px(line))
+	return widest
+
+
+func _line_advance_px() -> int:
+	# Glyph height plus a small inter-line gap (scales with the label).
+	return PixelFont.GH * pixel_scale + pixel_scale
 
 
 func _refresh() -> void:
-	custom_minimum_size = Vector2(_text_width_px(), PixelFont.GH * pixel_scale)
+	var lines := text.split("\n")
+	var height := lines.size() * PixelFont.GH * pixel_scale + maxi(lines.size() - 1, 0) * pixel_scale
+	custom_minimum_size = Vector2(_max_width_px(), height)
 	update_minimum_size()
 	queue_redraw()
 
 
 func _draw() -> void:
 	var atlas := PixelFont.atlas()
-	var total := _text_width_px()
-	var x := 0.0
-	match align:
-		Align.CENTER:
-			x = (size.x - total) * 0.5
-		Align.RIGHT:
-			x = size.x - total
+	var glyph := Vector2(PixelFont.GW * pixel_scale, PixelFont.GH * pixel_scale)
 	var step := PixelFont.advance() * pixel_scale
-	for i in text.length():
-		var src := PixelFont.glyph_rect(text[i])
-		var dest := Rect2(x, 0, PixelFont.GW * pixel_scale, PixelFont.GH * pixel_scale)
-		draw_texture_rect_region(atlas, dest, src, color)
-		x += step
+	var y := 0.0
+	for line in text.split("\n"):
+		var total := _line_width_px(line)
+		var x := 0.0
+		match align:
+			Align.CENTER:
+				x = (size.x - total) * 0.5
+			Align.RIGHT:
+				x = size.x - total
+		for i in line.length():
+			var src := PixelFont.glyph_rect(line[i])
+			draw_texture_rect_region(atlas, Rect2(x, y, glyph.x, glyph.y), src, color)
+			x += step
+		y += _line_advance_px()
